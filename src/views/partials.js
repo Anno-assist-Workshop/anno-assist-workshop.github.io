@@ -1,4 +1,5 @@
 import { loadConfig } from '../data/confing.js';
+import {until} from '../lib/directives/until.js'
 import {html} from '../lib/lit-html.js'
 
 let config = null;
@@ -17,8 +18,8 @@ async function resolveIcon(name, classList){
     if(!data){
         data = (await config).missing
     }
-    return iconTemplate(data[0], data[1]);
+    return iconTemplate(data[0], data[1], classList);
 }
 
-const iconTemplate = (x, y) => html `
+const iconTemplate = (x, y, classList) => html `
 <span class="icon" ${classList.join(' ')} style="background-position: -${x * 46}px -${y * 46}px"></span>`

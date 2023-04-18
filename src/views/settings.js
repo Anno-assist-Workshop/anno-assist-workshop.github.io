@@ -1,6 +1,8 @@
 import { create, deleteGame, getGames } from '../data/games.js';
+import { getIslands } from '../data/islands.js';
 import {html} from '../lib/lit-html.js'
 import { createSubmitHandler } from '../util.js';
+import { icon } from './partials.js';
 
 
 const settingsTemplate = (games, user, onCreate, onDelete, onLoad, error) => html `
@@ -10,8 +12,10 @@ const settingsTemplate = (games, user, onCreate, onDelete, onLoad, error) => htm
     <div>
         <a class = 'link' href = '/login'>Sign in</a> to enable cloud sync
     </div>
-    ` : null}
-    
+    ` : html `
+    <div class = 'box'>
+       <i class = 'fa-solid fa-user-check'></i> Logged in as ${user.username}. <a class = 'link' href = '/logout'>Logout</a>
+    </div>
     <table>
         <thead>
             <tr>
@@ -37,13 +41,15 @@ const settingsTemplate = (games, user, onCreate, onDelete, onLoad, error) => htm
                 </td>
             </tr>
         </tfoot>
-    </table>
+    </table>`}   
 </section>
 `;
 
 const gameRow = (game, onDelete, onLoad) => html `
 <tr>
-    <td>${game.active ? icon('arrow', 'left') : null}${game.name}</td>
+    <td>
+        <div class = 'grid'>${game.active ? icon('arrow', 'left') : null}${game.name}</div>
+    </td>
     <td>
         <button @click = ${onLoad} class = 'btn'><i class = 'fa-solid fa-download'></i>Load</button>
         <button @click = ${onDelete} class = 'btn'><i class = 'fa-solid fa-trash-can'></i>Delete</button>
@@ -58,16 +64,19 @@ export async function settingsView(ctx){
 
     function update(error){
          if(ctx.game){
-            const current = games.find(g => g.objectId == ctx.game.objectId);
-            if(current){
-                current.active = true;
-            } 
+            for(let game of games){
+                if(game.objectId == ctx.game.objectId){
+                    game.active = true;
+                }else{
+                    game.active = false;
+                }
+            }          
         }
         ctx.render(settingsTemplate(games, ctx.user, createSubmitHandler(onCreate), onDelete, onLoad, error));
     }
 
 
-    async function onCreate({name}){
+    async function onCreate({name}, form){
         try {
             if(name == ''){
                 throw {message: 'Name is required'}
@@ -78,6 +87,8 @@ export async function settingsView(ctx){
 
             Object.assign(gameData, result);
             games.push(gameData)
+            
+            form.reset()
 
             update();
         } catch (err) {
@@ -103,6 +114,8 @@ export async function settingsView(ctx){
 
         ctx.setGame(game);
         
+        const islands = await getIslands(game.objectId);
+        ctx.setIslands(islands)
 
         update();
     }
